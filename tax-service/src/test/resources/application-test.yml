@@ -1,0 +1,9 @@
+# Test profile: isolated in-memory H2; Flyway still runs the real migrations (schema + seed).
+spring:
+  datasource:
+    url: jdbc:h2:mem:taxtestdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false

@@ -1,0 +1,412 @@
+{
+  "info": {
+    "name": "Ecommerce Price + Tax Services (demo)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Price Service :8083 and Tax Service :8084. Demo data only."
+  },
+  "item": [
+    {
+      "name": "PRICE SERVICE (:8083)",
+      "item": [
+        {
+          "name": "01 GET current price BOS-001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001"
+            },
+            "description": "Expect 200. Seeded v1: selling price 6999.00 (synthetic demo price)."
+          }
+        },
+        {
+          "name": "02 GET price on date (before first version)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001?date=2026-09-30"
+            },
+            "description": "Expect 404 PRICE_NOT_FOUND - no price valid before 2026-10-01."
+          }
+        },
+        {
+          "name": "03 GET price history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001/history"
+            },
+            "description": "Expect one version (v1) on a fresh database."
+          }
+        },
+        {
+          "name": "04 POST new price (creates version 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices"
+            },
+            "description": "Expect 201, priceVersion 2. Run only once per fresh database (second run -> 409).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"currency\": \"INR\",\n  \"basePrice\": 7999.0,\n  \"sellingPrice\": 7199.1,\n  \"discountPercent\": 10.0,\n  \"validFrom\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "05 GET current price after update",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001"
+            },
+            "description": "Expect version 2 (if your PC date is on/after 2026-10-03)."
+          }
+        },
+        {
+          "name": "06 GET price history after update",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001/history"
+            },
+            "description": "Expect v1 SUPERSEDED (validTo 2026-10-02) and v2 ACTIVE."
+          }
+        },
+        {
+          "name": "07 GET effective-dated price 2026-10-02",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001?date=2026-10-02"
+            },
+            "description": "Expect version 1."
+          }
+        },
+        {
+          "name": "08 GET effective-dated price 2026-10-03",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/BOS-001?date=2026-10-03"
+            },
+            "description": "Expect version 2."
+          }
+        },
+        {
+          "name": "09 POST invalid price (validation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices"
+            },
+            "description": "Expect 400 VALIDATION_FAILED.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"\",\n  \"currency\": \"INR\",\n  \"basePrice\": -1.0,\n  \"sellingPrice\": 10.0,\n  \"discountPercent\": 150.0,\n  \"validFrom\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "10 POST invalid price (business rule)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices"
+            },
+            "description": "Expect 422 INVALID_PRICE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-002\",\n  \"currency\": \"INR\",\n  \"basePrice\": 1000.0,\n  \"sellingPrice\": 1500.0,\n  \"discountPercent\": 0.0,\n  \"validFrom\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "11 GET unknown product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/prices/DOES-NOT-EXIST"
+            },
+            "description": "Expect 404 PRICE_NOT_FOUND."
+          }
+        },
+        {
+          "name": "12 Actuator health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/actuator/health"
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "TAX SERVICE (:8084)",
+      "item": [
+        {
+          "name": "13 GET product tax classification BOS-001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/tax-classifications/product/BOS-001"
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "14 GET tax rule 8467",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/tax-rules/8467"
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "15 POST inter-state calculation (KA -> MH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect IGST 18%, tax 1295.84, total 8494.94.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"taxableAmount\": 7199.1,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "16 POST intra-state calculation (KA -> KA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect CGST 9% + SGST 9%, tax 1295.84, total 8494.94.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"taxableAmount\": 7199.1,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"KA\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "17 POST invalid amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect 400 INVALID_TAXABLE_AMOUNT.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"taxableAmount\": -100.0,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "18 POST invalid state",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect 400 INVALID_STATE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"taxableAmount\": 100.0,\n  \"sellerState\": \"XX\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "19 POST invalid date",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect 400 INVALID_TRANSACTION_DATE.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-001\",\n  \"taxableAmount\": 100.0,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2010-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "20 POST unknown product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect 404 TAX_CLASSIFICATION_NOT_FOUND.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"NOPE-1\",\n  \"taxableAmount\": 100.0,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "21 POST product with unverified GST rate (BOS-020)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/taxes/calculate"
+            },
+            "description": "Expect 422 TAX_RATE_NOT_VERIFIED: dataset marks the battery rate as needing product specification.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"BOS-020\",\n  \"taxableAmount\": 4249.15,\n  \"sellerState\": \"KA\",\n  \"buyerState\": \"MH\",\n  \"transactionDate\": \"2026-10-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "22 GET tax rule 8507 (unverified)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/tax-rules/8507"
+            },
+            "description": "Rates are null; status REQUIRES_PRODUCT_SPECIFICATION."
+          }
+        },
+        {
+          "name": "23 Actuator health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/actuator/health"
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}
